@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-300">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormatShift - Client-Side Image Converter</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="tailwind.js"></script>
+    <script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: { 300: '#93c5fd', 500: '#3b82f6', 600: '#2563eb', 800: '#1e40af' }
+        }
+      }
+    }
+  }
+</script>
+    
+    <!-- JSZip CDN for batch downloading -->
+    <script src="jszip.min.js"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 100 900;
+            src: url('./fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+        }
+
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Drag and Drop hover state */
+        .drag-over { border-color: #3b82f6 !important; background-color: rgba(59, 130, 246, 0.05) !important; }
+        .dark .drag-over { background-color: rgba(59, 130, 246, 0.15) !important; }
+
+        /* Progress Bar background in table row */
+        .row-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background-color: rgba(34, 197, 94, 0.2);
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .dark .row-progress { background-color: rgba(34, 197, 94, 0.3); }
+        .table-cell-content { position: relative; z-index: 10; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Navbar -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <h1 class="text-2xl font-bold tracking-tight">FormatShift</h1>
+            </div>
+            <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500" aria-label="Toggle Dark Mode">
+                <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center p-4 sm:p-8 max-w-6xl mx-auto w-full">
+        
+        <!-- Error Toast -->
+        <div id="messageArea" class="w-full mb-4 hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative rounded-xl shadow-sm" role="alert">
+            <span class="block sm:inline" id="messageText"></span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" onclick="document.getElementById('messageArea').classList.add('hidden')">
+                <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+            </span>
+        </div>
+
+        <!-- Section 1: Drag & Drop Zone -->
+        <div id="uploadSection" class="w-full max-w-3xl flex flex-col items-center justify-center min-h-[400px]">
+            <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center w-full h-96 border-2 border-gray-300 border-dashed rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 dark:border-gray-600 transition-all duration-200">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none text-center px-4">
+                    <svg class="w-12 h-12 mb-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                    </svg>
+                    <p class="mb-2 text-xl sm:text-2xl font-semibold text-gray-700 dark:text-gray-300">Click to upload or drag and drop</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Supports PNG, JPG, WEBP, AVIF and more</p>
+                </div>
+                <input id="fileInput" type="file" class="hidden" multiple accept="image/*" />
+            </label>
+        </div>
+
+        <!-- Section 2: Single Image View -->
+        <div id="singleSection" class="w-full hidden flex-col items-center">
+            <div class="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col mb-6">
+                
+                <div class="w-full h-[60vh] bg-gray-100 dark:bg-gray-900 overflow-auto flex items-start justify-start p-4 relative" id="singlePreviewContainer">
+                    <img id="singleImagePreview" src="" alt="Preview" class="max-w-none shadow-md rounded transition-transform duration-200 origin-center" />
+                </div>
+                
+                <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex flex-wrap gap-3 items-center justify-center">
+                    <button id="btnRotate" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 flex items-center gap-2 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Rotate
+                    </button>
+                    <button id="btnFlipH" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 flex items-center gap-2 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 17h8M12 7v10"></path></svg> Flip horizontally
+                    </button>
+                    <button id="btnFlipV" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 flex items-center gap-2 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8v8M17 8v8M7 12h10"></path></svg> Flip vertically
+                    </button>
+                    <button id="btnGrayscale" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 flex items-center gap-2 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg> B/W
+                    </button>
+                </div>
+
+                <div class="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <label for="singleFormat" class="font-medium">Convert to:</label>
+                        <select id="singleFormat" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                            <option value="image/png">PNG</option>
+                            <option value="image/jpeg">JPG</option>
+                            <option value="image/webp">WEBP</option>
+                            <option value="image/avif">AVIF</option>
+                            <option value="image/gif">GIF</option>
+                            <option value="image/bmp">BMP</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 w-full sm:w-auto">
+                        <button id="btnResetSingle" class="flex-1 sm:flex-none px-5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-brand-600 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 transition-colors">Reset</button>
+                        <button id="btnDownloadSingle" class="flex-1 sm:flex-none text-white bg-brand-600 hover:bg-brand-500 focus:ring-4 focus:ring-brand-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none dark:focus:ring-brand-800 transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Multiple Images View -->
+        <div id="multipleSection" class="w-full hidden flex-col">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">
+                            <tr>
+                                <th scope="col" class="px-6 py-4">Name</th>
+                                <th scope="col" class="px-6 py-4">Size</th>
+                                <th scope="col" class="px-6 py-4">Original Type</th>
+                                <th scope="col" class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fileTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <label for="batchFormat" class="font-medium text-gray-900 dark:text-white">Format for all:</label>
+                        <select id="batchFormat" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="image/png">PNG</option>
+                            <option value="image/jpeg">JPG</option>
+                            <option value="image/webp">WEBP</option>
+                            <option value="image/avif">AVIF</option>
+                            <option value="image/gif">GIF</option>
+                            <option value="image/bmp">BMP</option>
+                        </select>
+                    </div>
+                    
+                    <div id="batchPreControls" class="flex gap-3 w-full sm:w-auto">
+                        <button id="btnResetMultiple" class="flex-1 sm:flex-none px-5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 transition-colors">Reset</button>
+                        <button id="btnConvertAll" class="flex-1 sm:flex-none text-white bg-brand-600 hover:bg-brand-500 focus:ring-4 focus:ring-brand-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none dark:focus:ring-brand-800 transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Convert All
+                        </button>
+                    </div>
+
+                    <div id="batchPostControls" class="hidden gap-3 w-full sm:w-auto">
+                        <button id="btnResetMultiplePost" class="flex-1 sm:flex-none px-5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 transition-colors">Start Over</button>
+                        <button id="btnDownloadZip" class="flex-1 sm:flex-none text-white bg-green-600 hover:bg-green-500 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none dark:focus:ring-green-800 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-500/30">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Download ZIP
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="fixed inset-0 z-50 hidden bg-gray-900/80 backdrop-blur-sm flex justify-center items-center p-4 sm:p-8">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-7xl h-full max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 z-10">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate pr-4" id="modalTitle">Image Preview</h3>
+                <button id="btnCloseModal" class="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg text-sm p-1.5 inline-flex items-center transition-colors">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>  
+                </button>
+            </div>
+            <div class="flex-1 overflow-auto bg-gray-100 dark:bg-gray-900 flex items-start justify-start p-4">
+                <img id="modalImage" src="" alt="Full Preview" class="max-w-none shadow-lg rounded bg-white/10" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        let currentFiles = [];
+        let convertedBlobs = []; 
+        let singleEditState = { rotate: 0, flipH: 1, flipV: 1, grayscale: false };
+
+        // --- DOM Elements ---
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        
+        const uploadSection = document.getElementById('uploadSection');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        
+        const singleSection = document.getElementById('singleSection');
+        const singleImagePreview = document.getElementById('singleImagePreview');
+        const btnResetSingle = document.getElementById('btnResetSingle');
+        const btnDownloadSingle = document.getElementById('btnDownloadSingle');
+        const singleFormatSelect = document.getElementById('singleFormat');
+        
+        const multipleSection = document.getElementById('multipleSection');
+        const fileTableBody = document.getElementById('fileTableBody');
+        const btnResetMultiple = document.getElementById('btnResetMultiple');
+        const btnResetMultiplePost = document.getElementById('btnResetMultiplePost');
+        const btnConvertAll = document.getElementById('btnConvertAll');
+        const btnDownloadZip = document.getElementById('btnDownloadZip');
+        const batchFormatSelect = document.getElementById('batchFormat');
+        const batchPreControls = document.getElementById('batchPreControls');
+        const batchPostControls = document.getElementById('batchPostControls');
+
+        const previewModal = document.getElementById('previewModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalImage = document.getElementById('modalImage');
+        const btnCloseModal = document.getElementById('btnCloseModal');
+
+        const messageArea = document.getElementById('messageArea');
+        const messageText = document.getElementById('messageText');
+
+        // --- Theme Logic (Con protezione Try-Catch per File:// locali) ---
+        let isDarkTheme = false;
+        try {
+            isDarkTheme = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        } catch (e) {
+            isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
+        if (isDarkTheme) {
+            document.documentElement.classList.add('dark');
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            sunIcon.classList.add('hidden');
+            moonIcon.classList.remove('hidden');
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                try { localStorage.theme = 'light'; } catch(e) {}
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                document.documentElement.classList.add('dark');
+                try { localStorage.theme = 'dark'; } catch(e) {}
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        }
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // --- Utility ---
+        function showMessage(msg) {
+            messageText.textContent = msg;
+            messageArea.classList.remove('hidden');
+            setTimeout(() => { messageArea.classList.add('hidden'); }, 5000);
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function getExtensionFromMime(mime) {
+            const map = { 
+                'image/png': 'png', 
+                'image/jpeg': 'jpg', 
+                'image/webp': 'webp',
+                'image/avif': 'avif',
+                'image/gif': 'gif',
+                'image/bmp': 'bmp'
+            };
+            return map[mime] || 'img';
+        }
+
+        function resetApp() {
+            currentFiles = [];
+            convertedBlobs = [];
+            fileInput.value = '';
+            singleImagePreview.src = '';
+            
+            uploadSection.classList.remove('hidden');
+            singleSection.classList.add('hidden');
+            multipleSection.classList.add('hidden');
+            
+            // Risolto conflitto classi Tailwind: rimuoviamo flex PRIMA di applicare hidden
+            batchPreControls.classList.remove('hidden');
+            batchPostControls.classList.remove('flex'); 
+            batchPostControls.classList.add('hidden');
+            
+            fileTableBody.innerHTML = '';
+            batchFormatSelect.disabled = false;
+        }
+
+        // --- Core Image Conversion ---
+        function convertImageToBlob(file, targetMimeType, edits = null) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const objectUrl = URL.createObjectURL(file);
+                
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    let isRotated = edits && (edits.rotate % 180 !== 0);
+                    canvas.width = isRotated ? img.height : img.width;
+                    canvas.height = isRotated ? img.width : img.height;
+                    
+                    if (targetMimeType === 'image/jpeg') {
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+                    
+                    ctx.save();
+                    
+                    if (edits) {
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.rotate((edits.rotate * Math.PI) / 180);
+                        ctx.scale(edits.flipH, edits.flipV);
+                        ctx.translate(-img.width / 2, -img.height / 2);
+                        
+                        if (edits.grayscale) {
+                            ctx.filter = 'grayscale(100%)';
+                        }
+                    }
+                    
+                    ctx.drawImage(img, 0, 0);
+                    ctx.restore();
+                    
+                    canvas.toBlob((blob) => {
+                        URL.revokeObjectURL(objectUrl);
+                        if (blob) resolve(blob);
+                        else reject(new Error('Canvas toBlob fallito'));
+                    }, targetMimeType, 0.92);
+                };
+                
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error('Il browser non può decodificare questa immagine.'));
+                };
+                
+                img.src = objectUrl;
+            });
+        }
+
+        // --- File Handling ---
+        function handleFiles(filesList) {
+            const validFiles = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+            if (validFiles.length === 0) {
+                showMessage("Per favore, carica file immagine validi.");
+                return;
+            }
+
+            currentFiles = validFiles;
+            uploadSection.classList.add('hidden');
+
+            if (currentFiles.length === 1) {
+                initSingleView(currentFiles[0]);
+            } else {
+                initMultipleView(currentFiles);
+            }
+        }
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // --- Modifiche Visive (CSS) ---
+        function applyPreviewEdits() {
+            singleImagePreview.style.transform = `rotate(${singleEditState.rotate}deg) scale(${singleEditState.flipH}, ${singleEditState.flipV})`;
+            singleImagePreview.style.filter = singleEditState.grayscale ? 'grayscale(100%)' : 'none';
+        }
+
+        document.getElementById('btnRotate').addEventListener('click', () => {
+            singleEditState.rotate = (singleEditState.rotate + 90) % 360; applyPreviewEdits();
+        });
+        document.getElementById('btnFlipH').addEventListener('click', () => {
+            singleEditState.flipH *= -1; applyPreviewEdits();
+        });
+        document.getElementById('btnFlipV').addEventListener('click', () => {
+            singleEditState.flipV *= -1; applyPreviewEdits();
+        });
+        document.getElementById('btnGrayscale').addEventListener('click', () => {
+            singleEditState.grayscale = !singleEditState.grayscale; applyPreviewEdits();
+        });
+
+        // --- Single View Logic ---
+        function initSingleView(file) {
+            singleSection.classList.remove('hidden');
+            singleImagePreview.src = URL.createObjectURL(file);
+            singleEditState = { rotate: 0, flipH: 1, flipV: 1, grayscale: false };
+            applyPreviewEdits();
+        }
+
+        btnResetSingle.addEventListener('click', resetApp);
+
+        btnDownloadSingle.addEventListener('click', async () => {
+            btnDownloadSingle.disabled = true;
+            btnDownloadSingle.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
+            
+            const file = currentFiles[0];
+            const targetMime = singleFormatSelect.value;
+            const ext = getExtensionFromMime(targetMime);
+            const newName = file.name.replace(/\.[^/.]+$/, "") + '.' + ext;
+
+            try {
+                const blob = await convertImageToBlob(file, targetMime, singleEditState);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = newName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+
+            } catch (err) {
+                showMessage("Failed to convert image: " + err.message);
+            } finally {
+                btnDownloadSingle.disabled = false;
+                btnDownloadSingle.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download';
+            }
+        });
+
+        // --- Multiple View Logic ---
+        function initMultipleView(files) {
+            multipleSection.classList.remove('hidden');
+            fileTableBody.innerHTML = '';
+            
+            files.forEach((file, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors relative';
+                tr.id = `row-${index}`;
+                
+                tr.innerHTML = `
+                    <td class="relative px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                        <div class="row-progress" id="progress-${index}"></div>
+                        <div class="table-cell-content truncate max-w-xs">${file.name}</div>
+                    </td>
+                    <td class="relative px-6 py-4">
+                        <div class="table-cell-content">${formatBytes(file.size)}</div>
+                    </td>
+                    <td class="relative px-6 py-4">
+                        <div class="table-cell-content">${file.type || 'unknown'}</div>
+                    </td>
+                    <td class="relative px-6 py-4 text-right">
+                        <div class="table-cell-content flex justify-end">
+                            <button onclick="openPreview(${index})" class="font-medium text-brand-600 dark:text-brand-500 hover:underline flex items-center gap-1 bg-white/50 dark:bg-gray-800/50 px-2 py-1 rounded backdrop-blur-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                Preview
+                            </button>
+                        </div>
+                    </td>
+                `;
+                fileTableBody.appendChild(tr);
+            });
+        }
+
+        btnResetMultiple.addEventListener('click', resetApp);
+        btnResetMultiplePost.addEventListener('click', resetApp);
+
+        btnConvertAll.addEventListener('click', async () => {
+            const targetMime = batchFormatSelect.value;
+            const ext = getExtensionFromMime(targetMime);
+            convertedBlobs = [];
+            
+            btnConvertAll.disabled = true;
+            batchFormatSelect.disabled = true;
+            btnResetMultiple.disabled = true;
+            
+            for (let i = 0; i < currentFiles.length; i++) {
+                const file = currentFiles[i];
+                const progressBar = document.getElementById(`progress-${i}`);
+                const newName = file.name.replace(/\.[^/.]+$/, "") + '.' + ext;
+                
+                try {
+                    await new Promise(r => setTimeout(r, 50));
+                    progressBar.style.width = '50%'; 
+                    
+                    const blob = await convertImageToBlob(file, targetMime);
+                    convertedBlobs.push({ name: newName, blob: blob });
+                    
+                    progressBar.style.width = '100%';
+                    progressBar.classList.add('bg-green-100', 'dark:bg-green-900/30');
+                } catch (err) {
+                    progressBar.style.width = '100%';
+                    progressBar.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                    console.error(`Failed ${file.name}:`, err);
+                }
+            }
+
+            batchPreControls.classList.add('hidden');
+            batchPostControls.classList.remove('hidden');
+            batchPostControls.classList.add('flex');
+            
+            btnConvertAll.disabled = false;
+            btnResetMultiple.disabled = false;
+        });
+
+        btnDownloadZip.addEventListener('click', async () => {
+            if (convertedBlobs.length === 0) return;
+            
+            // Salvaguardia se jszip.min.js fallisse per motivi di rete o path sbagliato
+            if (typeof JSZip === 'undefined') {
+                showMessage("Errore: JSZip non è stato caricato. Controlla che il file 'jszip.min.js' sia nella stessa cartella e scritto correttamente.");
+                return;
+            }
+
+            const btnOriginalHtml = btnDownloadZip.innerHTML;
+            btnDownloadZip.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Zipping...';
+            btnDownloadZip.disabled = true;
+
+            const zip = new JSZip();
+            convertedBlobs.forEach(item => {
+                zip.file(item.name, item.blob);
+            });
+
+            try {
+                const content = await zip.generateAsync({ type: "blob" });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "FormatShift_Converted.zip";
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            } catch (err) {
+                showMessage("Error creating ZIP: " + err.message);
+            } finally {
+                btnDownloadZip.innerHTML = btnOriginalHtml;
+                btnDownloadZip.disabled = false;
+            }
+        });
+
+        // --- Modal Logic ---
+        function openPreview(index) {
+            const file = currentFiles[index];
+            modalTitle.textContent = file.name;
+            modalImage.src = URL.createObjectURL(file);
+            previewModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            previewModal.classList.add('hidden');
+            modalImage.src = '';
+            document.body.style.overflow = '';
+        }
+
+        btnCloseModal.addEventListener('click', closeModal);
+        
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                closeModal();
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !previewModal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>

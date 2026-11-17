@@ -13,11 +13,11 @@
 
     <style>
         @font-face {
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 100 900; /* Il font variabile gestisce tutti i pesi automaticamente */
-        src: url('./fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
-    }
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 100 900;
+            src: url('./fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+        }
 
         body { font-family: 'Inter', sans-serif; }
         
@@ -38,7 +38,7 @@
             left: 0;
             top: 0;
             height: 100%;
-            background-color: rgba(34, 197, 94, 0.2); /* Green tint */
+            background-color: rgba(34, 197, 94, 0.2);
             width: 0%;
             transition: width 0.3s ease;
             z-index: 0;
@@ -60,11 +60,9 @@
                 <h1 class="text-2xl font-bold tracking-tight">FormatShift</h1>
             </div>
             <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500" aria-label="Toggle Dark Mode">
-                <!-- Sun Icon -->
                 <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
-                <!-- Moon Icon -->
                 <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                 </svg>
@@ -75,7 +73,7 @@
     <!-- Main Content -->
     <main class="flex-grow flex flex-col items-center p-4 sm:p-8 max-w-6xl mx-auto w-full">
         
-        <!-- Error Toast / Message Area -->
+        <!-- Error Toast -->
         <div id="messageArea" class="w-full mb-4 hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative rounded-xl shadow-sm" role="alert">
             <span class="block sm:inline" id="messageText"></span>
             <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" onclick="document.getElementById('messageArea').classList.add('hidden')">
@@ -83,8 +81,8 @@
             </span>
         </div>
 
-        <!-- Section 1: Drag & Drop Zone (Visible initially) -->
-        <div id="uploadSection" class="w-full max-w-3xl flex flex-col items-center justify-center w-full min-h-[400px]">
+        <!-- Section 1: Drag & Drop Zone -->
+        <div id="uploadSection" class="w-full max-w-3xl flex flex-col items-center justify-center min-h-[400px]">
             <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center w-full h-96 border-2 border-gray-300 border-dashed rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 dark:border-gray-600 transition-all duration-200">
                 <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none text-center px-4">
                     <svg class="w-12 h-12 mb-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
@@ -100,12 +98,11 @@
         <!-- Section 2: Single Image View -->
         <div id="singleSection" class="w-full hidden flex-col items-center">
             <div class="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col mb-6">
-                <!-- Image Scrollable Container -->
+                
                 <div class="w-full h-[60vh] bg-gray-100 dark:bg-gray-900 overflow-auto flex items-start justify-start p-4 relative" id="singlePreviewContainer">
                     <img id="singleImagePreview" src="" alt="Preview" class="max-w-none shadow-md rounded transition-transform duration-200 origin-center" />
                 </div>
                 
-                <!-- NEW: Pannello Strumenti di Modifica -->
                 <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex flex-wrap gap-3 items-center justify-center">
                     <button id="btnRotate" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 flex items-center gap-2 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Rotate
@@ -121,7 +118,6 @@
                     </button>
                 </div>
 
-                <!-- Controls -->
                 <div class="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div class="flex items-center gap-3">
                         <label for="singleFormat" class="font-medium">Convert to:</label>
@@ -159,12 +155,10 @@
                             </tr>
                         </thead>
                         <tbody id="fileTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <!-- Rows injected via JS -->
                         </tbody>
                     </table>
                 </div>
                 
-                <!-- Batch Controls -->
                 <div class="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div class="flex items-center gap-3 w-full sm:w-auto">
                         <label for="batchFormat" class="font-medium text-gray-900 dark:text-white">Format for all:</label>
@@ -178,7 +172,6 @@
                         </select>
                     </div>
                     
-                    <!-- Pre-conversion controls -->
                     <div id="batchPreControls" class="flex gap-3 w-full sm:w-auto">
                         <button id="btnResetMultiple" class="flex-1 sm:flex-none px-5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 transition-colors">Reset</button>
                         <button id="btnConvertAll" class="flex-1 sm:flex-none text-white bg-brand-600 hover:bg-brand-500 focus:ring-4 focus:ring-brand-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none dark:focus:ring-brand-800 transition-colors flex items-center justify-center gap-2">
@@ -187,7 +180,6 @@
                         </button>
                     </div>
 
-                    <!-- Post-conversion controls (hidden initially) -->
                     <div id="batchPostControls" class="hidden gap-3 w-full sm:w-auto">
                         <button id="btnResetMultiplePost" class="flex-1 sm:flex-none px-5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 transition-colors">Start Over</button>
                         <button id="btnDownloadZip" class="flex-1 sm:flex-none text-white bg-green-600 hover:bg-green-500 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none dark:focus:ring-green-800 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-500/30">
@@ -210,7 +202,6 @@
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>  
                 </button>
             </div>
-            <!-- Scrollable content area -->
             <div class="flex-1 overflow-auto bg-gray-100 dark:bg-gray-900 flex items-start justify-start p-4">
                 <img id="modalImage" src="" alt="Full Preview" class="max-w-none shadow-lg rounded bg-white/10" />
             </div>
@@ -220,8 +211,8 @@
     <script>
         // --- State ---
         let currentFiles = [];
-        let convertedBlobs = []; // Array of objects { name, blob }
-        let singleEditState = { rotate: 0, flipH: 1, flipV: 1, grayscale: false }; // Nuova variabile per tenere traccia delle modifiche
+        let convertedBlobs = []; 
+        let singleEditState = { rotate: 0, flipH: 1, flipV: 1, grayscale: false };
 
         // --- DOM Elements ---
         const themeToggle = document.getElementById('themeToggle');
@@ -256,23 +247,15 @@
         const messageArea = document.getElementById('messageArea');
         const messageText = document.getElementById('messageText');
 
-        // --- Theme Logic ---
-        function toggleTheme() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
-                sunIcon.classList.add('hidden');
-                moonIcon.classList.remove('hidden');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
-                sunIcon.classList.remove('hidden');
-                moonIcon.classList.add('hidden');
-            }
+        // --- Theme Logic (Con protezione Try-Catch per File:// locali) ---
+        let isDarkTheme = false;
+        try {
+            isDarkTheme = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        } catch (e) {
+            isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
         }
 
-        // Initialize Theme
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (isDarkTheme) {
             document.documentElement.classList.add('dark');
             sunIcon.classList.remove('hidden');
             moonIcon.classList.add('hidden');
@@ -280,6 +263,21 @@
             document.documentElement.classList.remove('dark');
             sunIcon.classList.add('hidden');
             moonIcon.classList.remove('hidden');
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                try { localStorage.theme = 'light'; } catch(e) {}
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                document.documentElement.classList.add('dark');
+                try { localStorage.theme = 'dark'; } catch(e) {}
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
         }
         themeToggle.addEventListener('click', toggleTheme);
 
@@ -321,9 +319,11 @@
             singleSection.classList.add('hidden');
             multipleSection.classList.add('hidden');
             
-            // Reset multiple UI
+            // Risolto conflitto classi Tailwind: rimuoviamo flex PRIMA di applicare hidden
             batchPreControls.classList.remove('hidden');
+            batchPostControls.classList.remove('flex'); 
             batchPostControls.classList.add('hidden');
+            
             fileTableBody.innerHTML = '';
             batchFormatSelect.disabled = false;
         }
@@ -338,12 +338,10 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    // Calcola le dimensioni se l'immagine è ruotata di 90 o 270 gradi
                     let isRotated = edits && (edits.rotate % 180 !== 0);
                     canvas.width = isRotated ? img.height : img.width;
                     canvas.height = isRotated ? img.width : img.height;
                     
-                    // Sfondo bianco per chi converte PNG (trasparenti) in JPEG
                     if (targetMimeType === 'image/jpeg') {
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -351,7 +349,6 @@
                     
                     ctx.save();
                     
-                    // Se ci sono modifiche, sposta l'origine al centro, ruota/scala, e torna indietro
                     if (edits) {
                         ctx.translate(canvas.width / 2, canvas.height / 2);
                         ctx.rotate((edits.rotate * Math.PI) / 180);
@@ -370,7 +367,7 @@
                         URL.revokeObjectURL(objectUrl);
                         if (blob) resolve(blob);
                         else reject(new Error('Canvas toBlob fallito'));
-                    }, targetMimeType, 0.92); // 0.92 quality per lossy
+                    }, targetMimeType, 0.92);
                 };
                 
                 img.onerror = () => {
@@ -386,7 +383,7 @@
         function handleFiles(filesList) {
             const validFiles = Array.from(filesList).filter(f => f.type.startsWith('image/'));
             if (validFiles.length === 0) {
-                showMessage("Please upload valid image files.");
+                showMessage("Per favore, carica file immagine validi.");
                 return;
             }
 
@@ -400,7 +397,6 @@
             }
         }
 
-        // Drag and Drop Events
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, preventDefaults, false);
         });
@@ -448,7 +444,6 @@
         function initSingleView(file) {
             singleSection.classList.remove('hidden');
             singleImagePreview.src = URL.createObjectURL(file);
-            // Resetta le modifiche ogni volta che si apre una nuova immagine
             singleEditState = { rotate: 0, flipH: 1, flipV: 1, grayscale: false };
             applyPreviewEdits();
         }
@@ -462,13 +457,10 @@
             const file = currentFiles[0];
             const targetMime = singleFormatSelect.value;
             const ext = getExtensionFromMime(targetMime);
-            // Replace old extension with new
             const newName = file.name.replace(/\.[^/.]+$/, "") + '.' + ext;
 
             try {
                 const blob = await convertImageToBlob(file, targetMime, singleEditState);
-                
-                // Trigger download
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
@@ -531,7 +523,6 @@
             const ext = getExtensionFromMime(targetMime);
             convertedBlobs = [];
             
-            // UI State change
             btnConvertAll.disabled = true;
             batchFormatSelect.disabled = true;
             btnResetMultiple.disabled = true;
@@ -542,30 +533,25 @@
                 const newName = file.name.replace(/\.[^/.]+$/, "") + '.' + ext;
                 
                 try {
-                    // Small delay to allow UI to breathe and update
                     await new Promise(r => setTimeout(r, 50));
-                    
-                    // Simulate processing width change for animation
                     progressBar.style.width = '50%'; 
                     
                     const blob = await convertImageToBlob(file, targetMime);
                     convertedBlobs.push({ name: newName, blob: blob });
                     
                     progressBar.style.width = '100%';
-                    progressBar.classList.add('bg-green-100', 'dark:bg-green-900/30'); // Finalize color
+                    progressBar.classList.add('bg-green-100', 'dark:bg-green-900/30');
                 } catch (err) {
                     progressBar.style.width = '100%';
-                    progressBar.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; // Red for error
+                    progressBar.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
                     console.error(`Failed ${file.name}:`, err);
                 }
             }
 
-            // Switch controls to Download mode
             batchPreControls.classList.add('hidden');
             batchPostControls.classList.remove('hidden');
             batchPostControls.classList.add('flex');
             
-            // Re-enable
             btnConvertAll.disabled = false;
             btnResetMultiple.disabled = false;
         });
@@ -573,6 +559,12 @@
         btnDownloadZip.addEventListener('click', async () => {
             if (convertedBlobs.length === 0) return;
             
+            // Salvaguardia se jszip.min.js fallisse per motivi di rete o path sbagliato
+            if (typeof JSZip === 'undefined') {
+                showMessage("Errore: JSZip non è stato caricato. Controlla che il file 'jszip.min.js' sia nella stessa cartella e scritto correttamente.");
+                return;
+            }
+
             const btnOriginalHtml = btnDownloadZip.innerHTML;
             btnDownloadZip.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Zipping...';
             btnDownloadZip.disabled = true;
@@ -608,7 +600,7 @@
             modalTitle.textContent = file.name;
             modalImage.src = URL.createObjectURL(file);
             previewModal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent body scroll
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
@@ -619,14 +611,12 @@
 
         btnCloseModal.addEventListener('click', closeModal);
         
-        // Close modal on background click
         previewModal.addEventListener('click', (e) => {
             if (e.target === previewModal) {
                 closeModal();
             }
         });
         
-        // Close modal on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !previewModal.classList.contains('hidden')) {
                 closeModal();

@@ -6,7 +6,19 @@
     <title>FormatShift - Client-Side Image Converter</title>
     
     <!-- Tailwind CSS CDN -->
-    <link rel="stylesheet" href="styles.css">
+    <script src="tailwind.js"></script>
+    <script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: { 300: '#93c5fd', 500: '#3b82f6', 600: '#2563eb', 800: '#1e40af' }
+        }
+      }
+    }
+  }
+</script>
     
     <!-- JSZip CDN for batch downloading -->
     <script src="jszip.min.js"></script>

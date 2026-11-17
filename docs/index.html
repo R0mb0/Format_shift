@@ -6,7 +6,7 @@
     <title>FormatShift - Client-Side Image Converter</title>
     
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -26,13 +26,17 @@
         }
     </script>
     
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <!-- JSZip CDN for batch downloading -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="jszip.min.js"></script>
 
     <style>
+        @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 100 900; /* Il font variabile gestisce tutti i pesi automaticamente */
+        src: url('./fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+    }
+
         body { font-family: 'Inter', sans-serif; }
         
         /* Custom Scrollbar */
